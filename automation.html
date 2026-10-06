@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Generator - AI Automation Settings</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --primary-blue: #2563EB;
+            --primary-orange: #F59E0B;
+            --dark-sidebar: #0F172A;
+            --bg-light: #F8FAFC;
+            --text-main: #1E293B;
+            --text-muted: #64748B;
+            --border-color: #E2E8F0;
+            --success-green: #10B981;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-light); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        /* --- LAYOUT --- */
+        .sidebar { width: 260px; background-color: var(--dark-sidebar); color: #94A3B8; display: flex; flex-direction: column; flex-shrink: 0; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        /* --- SIDEBAR --- */
+        .logo-area { height: 64px; background-color: var(--primary-orange); display: flex; align-items: center; padding: 0 20px; color: white; font-weight: 700; font-size: 18px; }
+        .logo-icon { width: 28px; height: 28px; background-color: var(--dark-sidebar); border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; }
+        .logo-icon::after { content: ''; width: 10px; height: 10px; background-color: white; border-radius: 50%; }
+        
+        .nav-menu { padding: 20px 0; flex: 1; }
+        .nav-item { display: flex; align-items: center; padding: 14px 24px; cursor: pointer; transition: 0.2s; font-size: 14px; font-weight: 500; }
+        .nav-item:hover { background-color: #1E293B; color: white; }
+        .nav-item.active { background-color: var(--primary-blue); color: white; border-left: 4px solid #60A5FA; }
+        .nav-item i { width: 20px; margin-right: 12px; font-size: 16px; }
+
+        /* --- HEADER --- */
+        .header { height: 72px; background: white; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; flex-shrink: 0; }
+        .header h1 { font-size: 24px; font-weight: 700; }
+        .user-profile { display: flex; align-items: center; gap: 16px; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: #E2E8F0; overflow: hidden; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- VIEW CONTAINERS --- */
+        .view-container { display: none; flex: 1; overflow-y: auto; }
+        .view-container.active { display: flex; flex-direction: column; }
+
+        /* =========================================
+           VIEW 1: JOB DISCOVERY (WIZARD)
+           ========================================= */
+        .wizard-container { padding: 32px; position: relative; }
+        .progress-line-bg { position: absolute; top: 54px; left: 6%; right: 6%; height: 4px; background: #E2E8F0; z-index: 0; border-radius: 2px; }
+        .progress-line-fill { position: absolute; top: 54px; left: 6%; height: 4px; background: var(--primary-blue); z-index: 1; border-radius: 2px; width: 0%; transition: width 0.8s ease-in-out; }
+        
+        .steps-wrapper { display: flex; justify-content: space-between; position: relative; z-index: 2; }
+        .step-item { display: flex; flex-direction: column; align-items: center; width: 100px; }
+        .step-circle { width: 44px; height: 44px; border-radius: 8px; background: white; border: 2px solid #CBD5E1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: var(--text-muted); transition: 0.4s; }
+        .step-label { margin-top: 12px; font-size: 14px; font-weight: 600; color: var(--text-muted); text-align: center; transition: 0.4s; }
+        
+        .step-item.active .step-circle { background: var(--primary-orange); border-color: var(--primary-orange); color: white; transform: scale(1.1); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); }
+        .step-item.active .step-label { color: var(--text-main); }
+        .step-item.completed .step-circle { background: var(--primary-blue); border-color: var(--primary-blue); color: white; }
+        .step-item.completed .step-label { color: var(--text-main); }
+
+        .content-panel-wrapper { flex: 1; padding: 0 32px 32px 32px; overflow-y: auto; }
+        .content-panel { background: white; border-radius: 12px; border: 1px solid var(--border-color); padding: 24px; min-height: 400px; display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.4s, transform 0.4s; }
+        .content-panel.active { display: block; opacity: 1; transform: translateY(0); }
+        
+        .table-header { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
+        .checkbox-custom { width: 20px; height: 20px; border: 1px solid #CBD5E1; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .checkbox-custom.checked { background: var(--primary-blue); border-color: var(--primary-blue); color: white; }
+        .checkbox-custom i { font-size: 12px; display: none; }
+        .checkbox-custom.checked i { display: block; }
+
+        .footer-actions { height: 80px; background: white; border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; flex-shrink: 0; }
+        .btn { padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; border: none; outline: none; }
+        .btn-back { background: white; border: 1px solid var(--border-color); color: var(--text-muted); }
+        .btn-back:hover { background: var(--bg-light); }
+        .btn-next { background: var(--primary-orange); color: white; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+        .btn-next:hover { background: #D97706; }
+        .btn-next i { font-size: 12px; transition: transform 0.3s; }
+        .btn-next:hover i { transform: translateX(4px); }
+
+        /* Step Specific Styles */
+        .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .data-table th { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .data-table td { padding: 16px 0; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        .data-table tr:last-child td { border-bottom: none; }
+
+        .source-grid { display: flex; gap: 16px; margin-top: 24px; }
+        .source-card { flex: 1; border: 2px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; align-items: center; cursor: pointer; transition: 0.3s; }
+        .source-card:hover { border-color: #94A3B8; }
+        .source-card.selected { border-color: var(--primary-blue); background: #EFF6FF; }
+        .source-card .checkbox-custom { margin-right: 12px; }
+        .source-card span { font-weight: 600; font-size: 14px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--bg-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; }
+        .stat-value { font-size: 24px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .stat-label { font-size: 13px; font-weight: 600; color: var(--text-main); }
+        .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        
+        .match-badge { background: #DCFCE7; color: #166534; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 8px; }
+        .expandable-row { background: var(--bg-light); border-bottom: 1px solid var(--border-color); display: none; }
+        .expandable-row.open { display: table-row; }
+        .expandable-content { padding: 16px; display: flex; gap: 16px; }
+        .candidate-mini-card { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .mini-card-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .mini-card-name { font-weight: 700; font-size: 14px; }
+        .mini-card-role { font-size: 12px; color: var(--text-muted); }
+        .mini-card-score { background: var(--success-green); color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .mini-card-tags { display: flex; gap: 4px; margin-top: 12px; flex-wrap: wrap; }
+        .mini-card-tags span { background: #F1F5F9; color: var(--text-muted); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+
+        .template-layout { display: flex; gap: 24px; height: 100%; }
+        .template-list { width: 35%; border-right: 1px solid var(--border-color); padding-right: 24px; }
+        .template-search { display: flex; align-items: center; background: #F1F5F9; border-radius: 6px; padding: 8px 12px; margin-bottom: 16px; }
+        .template-search input { border: none; background: transparent; outline: none; font-size: 13px; margin-left: 8px; width: 100%; }
+        .template-item { border: 2px solid var(--border-color); border-radius: 8px; padding: 12px; cursor: pointer; transition: 0.3s; margin-bottom: 12px; }
+        .template-item.selected { border-color: var(--primary-blue); background: #EFF6FF; }
+        .template-item-header { display: flex; align-items: center; margin-bottom: 8px; }
+        .template-item-header .checkbox-custom { margin-right: 8px; width: 16px; height: 16px; }
+        .template-item-title { font-weight: 600; font-size: 13px; }
+        .template-item-desc { font-size: 12px; color: var(--text-muted); margin-left: 24px; }
+        
+        .template-preview { width: 65%; padding: 16px; background: var(--bg-light); border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; line-height: 1.6; color: var(--text-main); }
+        .preview-profile-box { background: white; border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; margin: 16px 0; }
+        .highlight-var { background: #FEF08A; padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+
+        .review-layout { display: flex; gap: 24px; }
+        .review-summary { width: 35%; display: flex; flex-direction: column; gap: 16px; }
+        .summary-box { background: var(--bg-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; }
+        .summary-header { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .summary-text { font-size: 12px; color: var(--text-muted); }
+        .review-preview { width: 65%; border: 1px solid var(--border-color); border-radius: 8px; background: white; display: flex; flex-direction: column; }
+        .review-preview-header { background: var(--bg-light); border-bottom: 1px solid var(--border-color); padding: 12px; display: flex; gap: 8px; }
+        .review-tab { font-size: 12px; padding: 4px 12px; border-radius: 4px; cursor: pointer; }
+        .review-tab.active { background: var(--primary-blue); color: white; }
+        .review-body { padding: 24px; flex: 1; font-size: 14px; line-height: 1.6; }
+        .review-footer { border-top: 1px solid var(--border-color); padding: 16px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-light); border-radius: 0 0 8px 8px; }
+        .btn-send { background: var(--primary-blue); color: white; position: relative; overflow: hidden; display: flex; align-items: center; gap: 8px; }
+        .btn-send.sent { background: var(--success-green); }
+        .btn-send .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
+        .btn-send.loading .spinner { display: block; }
+        .btn-send.loading .btn-text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* =========================================
+           VIEW 2: SETTINGS PAGE
+           ========================================= */
+        .settings-header { padding: 32px 32px 0 32px; }
+        .settings-header h2 { font-size: 28px; margin-bottom: 8px; }
+        .settings-header p { color: var(--text-muted); font-size: 14px; }
+
+        .settings-tabs { display: flex; border-bottom: 1px solid var(--border-color); padding: 0 32px; margin-top: 24px; gap: 32px; }
+        .settings-tab { padding: 16px 0; font-size: 15px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: 0.2s; }
+        .settings-tab.active { color: var(--primary-blue); border-bottom-color: var(--primary-blue); }
+        .settings-tab i { margin-right: 8px; }
+
+        .settings-content { padding: 32px; max-width: 900px; }
+        .settings-panel { display: none; }
+        .settings-panel.active { display: block; animation: fadeIn 0.4s ease-out; }
+
+        /* Automation Settings Form */
+        .form-group { margin-bottom: 32px; }
+        .form-group-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .form-group-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+        
+        .radio-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .radio-card { border: 2px solid var(--border-color); border-radius: 8px; padding: 20px; cursor: pointer; transition: 0.2s; position: relative; }
+        .radio-card:hover { border-color: #94A3B8; }
+        .radio-card.selected { border-color: var(--primary-blue); background: #EFF6FF; }
+        .radio-card input[type="radio"] { position: absolute; top: 20px; right: 20px; accent-color: var(--primary-blue); width: 18px; height: 18px; }
+        .radio-card-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+        .radio-card-desc { font-size: 12px; color: var(--text-muted); }
+
+        .schedule-options { background: var(--bg-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; display: none; }
+        .schedule-options.active { display: block; }
+        
+        .input-row { display: flex; gap: 24px; margin-bottom: 20px; align-items: flex-start; }
+        .input-group { flex: 1; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-main); }
+        .input-group select, .input-group input[type="time"], .input-group input[type="number"] { 
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; font-family: inherit; outline: none; transition: 0.2s;
+        }
+        .input-group select:focus, .input-group input:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+
+        .checkbox-list { display: flex; flex-direction: column; gap: 12px; }
+        .checkbox-row { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+        .checkbox-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary-blue); cursor: pointer; }
+
+        .btn-save { background: var(--primary-blue); color: white; padding: 12px 32px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; margin-top: 16px; }
+        .btn-save:hover { background: #1D4ED8; }
+        
+        .limit-input-wrapper { position: relative; }
+        .limit-input-wrapper i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"></div>
+            Lead Generator
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item" onclick="switchView('dashboard')"><i class="fa-solid fa-border-all"></i> Dashboard</div>
+            <div class="nav-item" onclick="switchView('candidates')"><i class="fa-solid fa-users"></i> Candidates</div>
+            <div class="nav-item active" id="nav-job-discovery" onclick="switchView('job-discovery')"><i class="fa-solid fa-briefcase"></i> Job Discovery</div>
+            <div class="nav-item"><i class="fa-solid fa-building"></i> Vendors / POCs</div>
+            <div class="nav-item"><i class="fa-solid fa-envelope"></i> Email Templates</div>
+            <div class="nav-item" id="nav-settings" onclick="switchView('settings')"><i class="fa-solid fa-gear"></i> Settings</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <!-- Header -->
+        <div class="header">
+            <h1 id="page-title">Job Discovery</h1>
+            <div style="display: flex; align-items: center;">
+                <div class="user-profile">
+                    <i class="fa-regular fa-bell" style="color: var(--text-muted); font-size: 18px; cursor: pointer;"></i>
+                    <div class="user-avatar"><img src="https://i.pravatar.cc/100?img=5" alt="User"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =========================================
+             VIEW 1: JOB DISCOVERY WIZARD
+             ========================================= -->
+        <div id="view-job-discovery" class="view-container active">
+            
+            <!-- Top Auto Toggle for Wizard -->
+            <div style="padding: 16px 32px 0 32px; display: flex; justify-content: flex-end;">
+                <div style="display: flex; align-items: center; background: #F1F5F9; border-radius: 20px; padding: 4px; border: 1px solid var(--border-color);">
+                    <span id="label-manual" class="auto-toggle-label inactive" style="padding: 0 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer;" onclick="toggleAutomation()">Manual</span>
+                    <div id="auto-toggle" class="toggle-switch" onclick="toggleAutomation()" style="width: 44px; height: 24px; background: #CBD5E1; border-radius: 12px; position: relative; cursor: pointer; transition: 0.3s;">
+                        <div class="toggle-knob" style="width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                    </div>
+                    <span id="label-auto" class="auto-toggle-label active" style="padding: 0 12px; font-size: 13px; font-weight: 600; color: var(--primary-blue); cursor: pointer;" onclick="toggleAutomation()">Auto</span>
+                </div>
+            </div>
+
+            <!-- Wizard Progress -->
+            <div class="wizard-container">
+                <div class="progress-line-bg"></div>
+                <div id="progress-fill" class="progress-line-fill"></div>
+                
+                <div class="steps-wrapper">
+                    <div class="step-item active" id="step-indicator-1">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">Candidates</div>
+                    </div>
+                    <div class="step-item" id="step-indicator-2">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">Job Source</div>
+                    </div>
+                    <div class="step-item" id="step-indicator-3">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">Search Jobs</div>
+                    </div>
+                    <div class="step-item" id="step-indicator-4">
+                        <div class="step-circle">4</div>
+                        <div class="step-label">Find POC's</div>
+                    </div>
+                    <div class="step-item" id="step-indicator-5">
+                        <div class="step-circle">5</div>
+                        <div class="step-label">Email Template</div>
+                    </div>
+                    <div class="step-item" id="step-indicator-6">
+                        <div class="step-circle">6</div>
+                        <div class="step-label">Review&Launch</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Panels (Same as before) -->
+            <div class="content-panel-wrapper">
+                <!-- STEP 1 -->
+                <div id="panel-1" class="content-panel active">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h2 style="font-size: 18px;">Available Profiles</h2>
+                        <div style="display: flex; align-items: center; font-size: 13px; color: var(--text-muted);">
+                            <div class="checkbox-custom" style="margin-right: 8px;" onclick="toggleCheckbox(this)"><i class="fa-solid fa-check"></i></div> Select All
+                        </div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Profile</th>
+                                <th style="width: 30%;">Titles OR'D IN ONE OUR SCRAPER CALL</th>
+                                <th style="width: 15%;">Resumes</th>
+                                <th style="width: 15%;">Locations Targeted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <div class="checkbox-custom step1-checkbox" onclick="toggleCheckbox(this)"><i class="fa-solid fa-check"></i></div>
+                                        <span style="margin-left: 12px; font-weight: 500;">Business Analyst</span>
+                                    </div>
+                                </td>
+                                <td>Business Analyst</td>
+                                <td>1</td>
+                                <td>Dallas, TX, Remote</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <div class="checkbox-custom step1-checkbox" onclick="toggleCheckbox(this)"><i class="fa-solid fa-check"></i></div>
+                                        <span style="margin-left: 12px; font-weight: 500;">Lead Site Reliability Engineer</span>
+                                    </div>
+                                </td>
+                                <td>Lead Site Reliability Engineer</td>
+                                <td>1</td>
+                                <td>Vutukuri Frisco, TX, Remote</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- STEP 2 -->
+                <div id="panel-2" class="content-panel">
+                    <h2 style="font-size: 18px; margin-bottom: 4px;">Select Source</h2>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">Pick at least one job repository to query simultaneously.</p>
+                    <div class="source-grid">
+                        <div class="source-card step2-card" onclick="toggleCheckbox(this.querySelector('.checkbox-custom'), this)">
+                            <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                            <span>LinkedIn</span>
+                        </div>
+                        <div class="source-card step2-card" onclick="toggleCheckbox(this.querySelector('.checkbox-custom'), this)">
+                            <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                            <span>LinkedIn</span>
+                        </div>
+                        <div class="source-card step2-card" onclick="toggleCheckbox(this.querySelector('.checkbox-custom'), this)">
+                            <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                            <span>Indeed</span>
+                        </div>
+                        <div class="source-card step2-card" onclick="toggleCheckbox(this.querySelector('.checkbox-custom'), this)">
+                            <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                            <span>Dice</span>
+                        </div>
+                        <div class="source-card step2-card" onclick="toggleCheckbox(this.querySelector('.checkbox-custom'), this)">
+                            <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                            <span>Monster</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3 -->
+                <div id="panel-3" class="content-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="font-size: 18px;">Jobs Found</h2>
+                            <p style="font-size: 13px; color: var(--text-muted);">Overview of the latest search results.</p>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-value" id="stat-jobs">0</div><div class="stat-label">Jobs Found</div><div class="stat-sub">30 per candidate × 8 candidates</div></div>
+                        <div class="stat-card"><div class="stat-value" id="stat-matches">0</div><div class="stat-label">Total Matches</div><div class="stat-sub">across 177 openings</div></div>
+                        <div class="stat-card"><div class="stat-value" id="stat-candidates">0</div><div class="stat-label">Candidates Searched</div><div class="stat-sub">in this run</div></div>
+                        <div class="stat-card"><div class="stat-value" id="stat-searches">0</div><div class="stat-label">Searches Completed</div><div class="stat-sub">for all candidates</div></div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;"></th>
+                                <th style="width: 30%;">Job Title</th>
+                                <th style="width: 20%;">Company</th>
+                                <th style="width: 15%;">Candidates</th>
+                                <th style="width: 15%;">Matched</th>
+                                <th style="width: 15%;">Job Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="job-row" onclick="toggleJobRow(this)">
+                                <td><div class="checkbox-custom step3-checkbox"><i class="fa-solid fa-check"></i></div></td>
+                                <td><span style="font-weight: 600;">Java Developer</span> <span class="match-badge">High Match</span></td>
+                                <td>Techgene</td>
+                                <td>3</td>
+                                <td style="color: var(--success-green); font-weight: 600;">2</td>
+                                <td><i class="fa-solid fa-link" style="color: var(--primary-blue);"></i> link</td>
+                            </tr>
+                            <tr class="expandable-row" id="expand-row-1">
+                                <td colspan="6">
+                                    <div class="expandable-content">
+                                        <div class="candidate-mini-card">
+                                            <div class="mini-card-header"><div><div class="mini-card-name">Alex Chen</div><div class="mini-card-role">Sr. Java Backend Architect</div></div><div class="mini-card-score">95%</div></div>
+                                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Dallas, TX • 7 Yrs Exp</div>
+                                            <div class="mini-card-tags"><span>Java 17</span><span>Spring Cloud</span><span>Kafka</span><span>AWS</span></div>
+                                        </div>
+                                        <div class="candidate-mini-card">
+                                            <div class="mini-card-header"><div><div class="mini-card-name">Alex Chen</div><div class="mini-card-role">Sr. Java Backend Architect</div></div><div class="mini-card-score">95%</div></div>
+                                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Dallas, TX • 7 Yrs Exp</div>
+                                            <div class="mini-card-tags"><span>Java 17</span><span>Spring Cloud</span><span>Kafka</span><span>AWS</span></div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="job-row">
+                                <td><div class="checkbox-custom step3-checkbox"><i class="fa-solid fa-check"></i></div></td>
+                                <td><span style="font-weight: 600;">Java Developer</span> <span class="match-badge">High Match</span></td>
+                                <td>Techgene</td>
+                                <td>3</td>
+                                <td style="color: var(--success-green); font-weight: 600;">2</td>
+                                <td><i class="fa-solid fa-link" style="color: var(--primary-blue);"></i> link</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- STEP 4 -->
+                <div id="panel-4" class="content-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="font-size: 18px;">POCs</h2>
+                            <p style="font-size: 13px; color: var(--text-muted);">Pick at least one job repository to query simultaneously.</p>
+                        </div>
+                        <div style="display: flex; align-items: center; font-size: 13px; color: var(--primary-blue); font-weight: 600; background: #EFF6FF; padding: 6px 12px; border-radius: 6px; border: 1px solid #BFDBFE;">
+                            <div class="checkbox-custom" style="margin-right: 8px; border-color: var(--primary-blue);" onclick="toggleCheckbox(this)"><i class="fa-solid fa-check"></i></div> Select All
+                        </div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;"></th>
+                                <th style="width: 25%;">Name</th>
+                                <th style="width: 30%;">Email</th>
+                                <th style="width: 20%;">Company</th>
+                                <th style="width: 20%;">Role</th>
+                            </tr>
+                        </thead>
+                        <tbody id="poc-table-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- STEP 5 -->
+                <div id="panel-5" class="content-panel">
+                    <div class="template-layout">
+                        <div class="template-list">
+                            <div class="template-search">
+                                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
+                                <input type="text" placeholder="Search templates...">
+                            </div>
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; display: flex; justify-content: space-between;">
+                                <span>Templates</span>
+                                <span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px;">4 Active</span>
+                            </div>
+                            <div class="template-item step5-template" onclick="selectTemplate(this)">
+                                <div class="template-item-header">
+                                    <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                                    <div class="template-item-title">Candidate Introduction Pitch</div>
+                                </div>
+                                <div class="template-item-desc">Formatted for HR Rahul with candidate match highlights, skills breakdown & resume links.</div>
+                            </div>
+                            <div class="template-item">
+                                <div class="template-item-header">
+                                    <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                                    <div class="template-item-title">Offer Discussion & Compensation</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="template-preview" id="template-preview-box">
+                            <div style="color: var(--text-muted); text-align: center; margin-top: 100px;">Select a template to preview</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 6 -->
+                <div id="panel-6" class="content-panel">
+                    <div class="review-layout">
+                        <div class="review-summary">
+                            <div class="summary-box"><div class="summary-header"><span>Candidates</span> <span style="color: var(--primary-blue);">5 Total</span></div><div class="summary-text">Rahul M. - Java Developer (8+ Yrs)</div></div>
+                            <div class="summary-box"><div class="summary-header"><span>POCs</span> <span style="color: var(--success-green);">● 45 Contacts</span></div><div class="summary-text">Tier-1 Vendors & Clients</div></div>
+                            <div class="summary-box"><div class="summary-header"><span>Email Template</span> <span style="color: var(--primary-blue); font-size: 12px;">Configure</span></div><div class="summary-text">Standard Bench Candidate Intro v2</div></div>
+                            <div class="summary-box"><div class="summary-header"><span>Timing</span> <span style="color: var(--text-muted); font-size: 12px;">Send immediately</span></div><div class="summary-text">EST Optimized</div></div>
+                        </div>
+                        <div class="review-preview">
+                            <div class="review-preview-header">
+                                <div class="review-tab active">Preview</div>
+                                <div class="review-tab">Code / Raw</div>
+                            </div>
+                            <div class="review-body">
+                                <div style="margin-bottom: 16px;"><span style="color: var(--text-muted); display: inline-block; width: 60px;">To:</span><span class="highlight-var">{{POC_First_Name}}</span> &lt;<span class="highlight-var">{{POC_Email}}</span>&gt; (45 Selected Contacts)</div>
+                                <div style="margin-bottom: 24px;"><span style="color: var(--text-muted); display: inline-block; width: 60px;">Subject:</span><span style="font-weight: 600;">Top Immediate Available Bench Profile: Java Full-Stack Specialist (Rahul M. & Team)</span></div>
+                                <p>Hi <span class="highlight-var">{{POC_First_Name}}</span>,</p><br>
+                                <p>Hope you are having a productive week. I am reaching out from Techgene Solutions bench sales team regarding available senior technical consultants ready for immediate contract deployments.</p><br>
+                                <p>Based on your recent open requirements for Senior Engineering roles, here is our top spotlight consultant available immediately for client interviews:</p>
+                                <div class="preview-profile-box">
+                                    <div style="font-weight: 700; font-size: 16px;">Rahul M. <span style="background: #DCFCE7; color: #166534; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">Immediate Availability</span></div>
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Role: Senior Java / Spring Boot Microservices Developer</div>
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Core Stack: Java 17, Spring Cloud, Kafka, AWS, Docker</div>
+                                </div>
+                                <p>Please let me know if any of these profiles align with your client's needs. We can arrange an internal screening call or submit right away.</p><br>
+                                <p>Best regards,<br><strong>Alex Rivera</strong><br>Lead Bench Sales Manager</p>
+                            </div>
+                            <div class="review-footer">
+                                <button class="btn btn-back" onclick="prevStep()">Back</button>
+                                <div style="display: flex; gap: 12px;">
+                                    <button class="btn" style="background: white; border: 1px solid var(--border-color); color: var(--text-main);"><i class="fa-regular fa-envelope" style="margin-right: 8px;"></i> Send Test Email</button>
+                                    <button id="btn-launch" class="btn btn-send" onclick="simulateSend()">
+                                        <div class="spinner"></div>
+                                        <span class="btn-text"><i class="fa-solid fa-paper-plane" style="margin-right: 8px;"></i> Schedule / Send Outreach (45 Contacts)</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Navigation -->
+            <div class="footer-actions">
+                <button class="btn btn-back" id="btn-back" onclick="prevStep()">Back</button>
+                <button class="btn btn-next" id="btn-next" onclick="nextStep()">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- =========================================
+             VIEW 2: SETTINGS PAGE
+             ========================================= -->
+        <div id="view-settings" class="view-container">
+            <div class="settings-header">
+                <h2>Configuration</h2>
+                <p>Manage how the AI agent operates your lead generation pipeline.</p>
+            </div>
+            
+            <div class="settings-tabs">
+                <div class="settings-tab active" onclick="switchSettingsTab('manual')"><i class="fa-solid fa-hand-pointer"></i> Manual Mode</div>
+                <div class="settings-tab" onclick="switchSettingsTab('automation')"><i class="fa-solid fa-robot"></i> Automation Mode</div>
+            </div>
+
+            <div class="settings-content">
+                <!-- Manual Settings Panel -->
+                <div id="settings-panel-manual" class="settings-panel active">
+                    <div class="form-group">
+                        <div class="form-group-title"><i class="fa-solid fa-user-gear" style="color: var(--primary-blue);"></i> Human-in-the-loop</div>
+                        <div class="form-group-desc">In Manual Mode, the AI will not execute any searches or send emails without your explicit approval. You act as the decision maker at every step.</div>
+                    </div>
+                    <div class="form-group">
+                        <div class="form-group-title"><i class="fa-solid fa-bell" style="color: var(--primary-blue);"></i> Notifications</div>
+                        <div class="form-group-desc">Choose when you want to be notified about new matches or POC discoveries.</div>
+                        <div class="checkbox-list">
+                            <div class="checkbox-row"><input type="checkbox" checked> Email me when new candidates match a job requirement</div>
+                            <div class="checkbox-row"><input type="checkbox" checked> Alert me when new POCs are found for a target company</div>
+                            <div class="checkbox-row"><input type="checkbox"> Notify me when a draft email is ready for review</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Automation Settings Panel -->
+                <div id="settings-panel-automation" class="settings-panel">
+                    
+                    <div class="form-group">
+                        <div class="form-group-title"><i style="color: var(--primary-blue);"></i> Execution Frequency</div>
+                        <div class="form-group-desc">Define when the AI agent should run the Job Discovery pipeline.</div>
+                        
+                        <div class="radio-cards">
+                            <label class="radio-card selected" onclick="selectFrequency(this, 'time')">
+                                <input type="radio" name="frequency" checked>
+                                <div class="radio-card-title">At a Specific Time</div>
+                                <div class="radio-card-desc">Run once at a designated time.</div>
+                            </label>
+                            <label class="radio-card" onclick="selectFrequency(this, 'recurring')">
+                                <input type="radio" name="frequency">
+                                <div class="radio-card-title">Recurring Schedule</div>
+                                <div class="radio-card-desc">Run repeatedly based on an interval.</div>
+                            </label>
+                        </div>
+
+                        <!-- Specific Time Options -->
+                        <div id="schedule-time" class="schedule-options active">
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label>Select Date</label>
+                                    <input type="date" value="2026-10-07">
+                                </div>
+                                <div class="input-group">
+                                    <label>Select Time</label>
+                                    <input type="time" value="09:00">
+                                </div>
+                                <div class="input-group">
+                                    <label>Time Zone</label>
+                                    <select>
+                                        <option>EST (UTC-5)</option>
+                                        <option>PST (UTC-8)</option>
+                                        <option>UTC</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recurring Options -->
+                        <div id="schedule-recurring" class="schedule-options">
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label>Repeat Every</label>
+                                    <select>
+                                        <option>Day</option>
+                                        <option>Week</option>
+                                        <option>Month</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Starting At</label>
+                                    <input type="time" value="09:00">
+                                </div>
+                                <div class="input-group">
+                                    <label>Ends</label>
+                                    <select>
+                                        <option>Never</option>
+                                        <option>After 10 occurrences</option>
+                                        <option>On Date...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-group-title"><i  style="color: var(--primary-blue);"></i> Limitations & Guardrails</div>
+                        <div class="form-group-desc">Set boundaries for the AI agent to prevent over-processing or spam.</div>
+                        
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Max Candidates per Run</label>
+                                <div class="limit-input-wrapper">
+                                    <input type="number" value="50" min="1" max="500">
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Max Emails per Run</label>
+                                <div class="limit-input-wrapper">
+                                    <input type="number" value="100" min="1" max="1000">
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <label>Max POCs per Company</label>
+                                <div class="limit-input-wrapper">
+                                    <input type="number" value="5" min="1" max="20">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-group-title"><i style="color: var(--primary-blue);"></i> AI Autonomy Level</div>
+                        <div class="form-group-desc">Determine how much the AI can do without your intervention.</div>
+                        <div class="checkbox-list">
+                            <div class="checkbox-row"><input type="checkbox" checked> AI automatically selects job sources (LinkedIn, Indeed, etc.)</div>
+                            <div class="checkbox-row"><input type="checkbox" checked> AI automatically selects the best email template</div>
+                            <div class="checkbox-row"><input type="checkbox" checked> AI automatically sends outreach emails</div>
+                            <div class="checkbox-row"><input type="checkbox"> AI automatically follows up on unresponsive leads (after 3 days)</div>
+                        </div>
+                    </div>
+
+                    <button class="btn-save" onclick="alert('Automation settings saved successfully!')">Save Automation Settings</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        let currentView = 'job-discovery';
+        let currentStep = 1;
+        const totalSteps = 6;
+        let isAuto = false;
+        let autoTimer = null;
+
+        // Populate POC table for Step 4
+        const pocTableBody = document.getElementById('poc-table-body');
+        for(let i=0; i<8; i++) {
+            pocTableBody.innerHTML += `
+                <tr>
+                    <td><div class="checkbox-custom step4-checkbox" onclick="toggleCheckbox(this)"><i class="fa-solid fa-check"></i></div></td>
+                    <td style="font-weight: 500;">rahul</td>
+                    <td>Rahul@gmail.com</td>
+                    <td>Techgene</td>
+                    <td>Manager</td>
+                </tr>
+            `;
+        }
+
+        // --- VIEW ROUTING ---
+        function switchView(viewName) {
+            currentView = viewName;
+            
+            // Update Sidebar Active State
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            if (viewName === 'job-discovery') document.getElementById('nav-job-discovery').classList.add('active');
+            if (viewName === 'settings') document.getElementById('nav-settings').classList.add('active');
+
+            // Toggle Views
+            document.querySelectorAll('.view-container').forEach(view => view.classList.remove('active'));
+            document.getElementById(`view-${viewName}`).classList.add('active');
+
+            // Update Header Title
+            const titleMap = {
+                'job-discovery': 'Job Discovery',
+                'settings': 'Settings'
+            };
+            document.getElementById('page-title').innerText = titleMap[viewName] || 'Dashboard';
+            
+            // Stop automation if navigating away
+            if (viewName !== 'job-discovery' && isAuto) {
+                toggleAutomation();
+            }
+        }
+
+        // --- SETTINGS TABS LOGIC ---
+        function switchSettingsTab(tabName) {
+            // Update Tab Styles
+            document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.closest('.settings-tab').classList.add('active');
+
+            // Update Panel Visibility
+            document.querySelectorAll('.settings-panel').forEach(panel => panel.classList.remove('active'));
+            document.getElementById(`settings-panel-${tabName}`).classList.add('active');
+        }
+
+        function selectFrequency(cardElement, type) {
+            // Update Radio Card Styles
+            document.querySelectorAll('.radio-card').forEach(card => card.classList.remove('selected'));
+            cardElement.classList.add('selected');
+            
+            // Show/Hide appropriate options
+            document.querySelectorAll('.schedule-options').forEach(opt => opt.classList.remove('active'));
+            if (type === 'time') {
+                document.getElementById('schedule-time').classList.add('active');
+            } else {
+                document.getElementById('schedule-recurring').classList.add('active');
+            }
+        }
+
+        // --- WIZARD NAVIGATION & AUTOMATION ---
+        function updateUI() {
+            const progressPercent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progress-fill').style.width = progressPercent + '%';
+
+            for (let i = 1; i <= totalSteps; i++) {
+                const indicator = document.getElementById(`step-indicator-${i}`);
+                indicator.className = 'step-item';
+                if (i < currentStep) indicator.classList.add('completed');
+                if (i === currentStep) indicator.classList.add('active');
+            }
+
+            document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active'));
+            const activePanel = document.getElementById(`panel-${currentStep}`);
+            activePanel.classList.add('active');
+            activePanel.classList.remove('fade-in');
+            void activePanel.offsetWidth; 
+            activePanel.classList.add('fade-in');
+
+            document.getElementById('btn-back').disabled = currentStep === 1;
+            const btnNext = document.getElementById('btn-next');
+            if (currentStep === totalSteps) {
+                btnNext.innerHTML = 'Launch Campaign <i class="fa-solid fa-arrow-right"></i>';
+            } else {
+                btnNext.innerHTML = 'Next <i class="fa-solid fa-arrow-right"></i>';
+            }
+
+            if (isAuto) {
+                runStepAutomation(currentStep);
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateUI();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateUI();
+            }
+        }
+
+        function toggleCheckbox(el, parentCard = null) {
+            el.classList.toggle('checked');
+            if (parentCard) {
+                parentCard.classList.toggle('selected');
+            }
+        }
+
+        function toggleJobRow(row) {
+            const checkbox = row.querySelector('.checkbox-custom');
+            checkbox.classList.toggle('checked');
+            const expandRow = document.getElementById('expand-row-1');
+            if (expandRow) expandRow.classList.toggle('open');
+        }
+
+        function selectTemplate(el) {
+            document.querySelectorAll('.template-item').forEach(item => item.classList.remove('selected'));
+            el.classList.add('selected');
+            el.querySelector('.checkbox-custom').classList.add('checked');
+            
+            document.getElementById('template-preview-box').innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 16px;">Preview <span style="font-size: 12px; background: #E2E8F0; padding: 4px 8px; border-radius: 4px; margin-left: 8px; color: var(--text-muted);">Template: Candidate Introduction Pitch</span></div>
+                <div style="background: white; padding: 16px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <p>Hi Rahul,</p><br>
+                    <p>Hope this week is treating you well! Following up on Techgene's open requisition for the <strong>Java Backend Engineer</strong> position...</p>
+                    <div style="background: var(--bg-light); padding: 12px; border-radius: 6px; margin: 16px 0; font-size: 13px;">
+                        <div style="font-weight: 700;">Rahul M. <span style="background: #DCFCE7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 10px;">Immediate Availability</span></div>
+                        <div style="color: var(--text-muted); margin-top: 4px;">Role: Senior Java / Spring Boot Microservices Developer</div>
+                        <div style="color: var(--text-muted); margin-top: 8px;">Core Stack: Java 17, Spring Cloud, Kafka, AWS</div>
+                    </div>
+                    <p>Please let me know if any of these profiles align with your client's needs...</p>
+                </div>
+            `;
+        }
+
+        function toggleAutomation() {
+            isAuto = !isAuto;
+            const toggle = document.getElementById('auto-toggle');
+            const labelManual = document.getElementById('label-manual');
+            const labelAuto = document.getElementById('label-auto');
+
+            if (isAuto) {
+                toggle.style.background = 'var(--primary-blue)';
+                toggle.querySelector('.toggle-knob').style.transform = 'translateX(20px)';
+                labelManual.style.color = 'var(--text-muted)';
+                labelAuto.style.color = 'var(--primary-blue)';
+                
+                currentStep = 1;
+                updateUI();
+                startAutoTimer();
+            } else {
+                toggle.style.background = '#CBD5E1';
+                toggle.querySelector('.toggle-knob').style.transform = 'translateX(0)';
+                labelManual.style.color = 'var(--primary-blue)';
+                labelAuto.style.color = 'var(--text-muted)';
+                clearTimeout(autoTimer);
+            }
+        }
+
+        function startAutoTimer() {
+            clearTimeout(autoTimer);
+            autoTimer = setTimeout(() => {
+                if (isAuto && currentStep < totalSteps) {
+                    nextStep();
+                    startAutoTimer();
+                } else if (isAuto && currentStep === totalSteps) {
+                    isAuto = false;
+                    document.getElementById('auto-toggle').style.background = '#CBD5E1';
+                    document.getElementById('auto-toggle').querySelector('.toggle-knob').style.transform = 'translateX(0)';
+                    document.getElementById('label-manual').style.color = 'var(--primary-blue)';
+                    document.getElementById('label-auto').style.color = 'var(--text-muted)';
+                }
+            }, 3500);
+        }
+
+        function runStepAutomation(step) {
+            const delay = (ms, fn) => setTimeout(fn, ms);
+
+            if (step === 1) {
+                delay(1000, () => {
+                    document.querySelectorAll('.step1-checkbox').forEach((cb, i) => {
+                        delay(i * 400, () => toggleCheckbox(cb));
+                    });
+                });
+            } 
+            else if (step === 2) {
+                delay(500, () => {
+                    document.querySelectorAll('.step2-card').forEach((card, i) => {
+                        delay(i * 300, () => {
+                            const cb = card.querySelector('.checkbox-custom');
+                            toggleCheckbox(cb, card);
+                        });
+                    });
+                });
+            } 
+            else if (step === 3) {
+                const stats = [
+                    { id: 'stat-jobs', end: 267 },
+                    { id: 'stat-matches', end: 490 },
+                    { id: 'stat-candidates', end: 8 },
+                    { id: 'stat-searches', end: 6 }
+                ];
+                stats.forEach(stat => {
+                    let current = 0;
+                    const el = document.getElementById(stat.id);
+                    const interval = setInterval(() => {
+                        current += Math.ceil(stat.end / 20);
+                        if (current >= stat.end) { current = stat.end; clearInterval(interval); }
+                        el.innerText = current;
+                    }, 50);
+                });
+
+                delay(1500, () => {
+                    const firstJobRow = document.querySelector('.job-row');
+                    if (firstJobRow) toggleJobRow(firstJobRow);
+                });
+            } 
+            else if (step === 4) {
+                delay(500, () => {
+                    document.querySelectorAll('.step4-checkbox').forEach((cb, i) => {
+                        delay(i * 150, () => toggleCheckbox(cb));
+                    });
+                });
+            } 
+            else if (step === 5) {
+                delay(1000, () => {
+                    const firstTemplate = document.querySelector('.step5-template');
+                    if (firstTemplate) selectTemplate(firstTemplate);
+                });
+            } 
+            else if (step === 6) {
+                delay(1500, () => simulateSend());
+            }
+        }
+
+        function simulateSend() {
+            const btn = document.getElementById('btn-launch');
+            if (btn.classList.contains('loading') || btn.classList.contains('sent')) return;
+
+            btn.classList.add('loading');
+            setTimeout(() => {
+                btn.classList.remove('loading');
+                btn.classList.add('sent');
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Sent Successfully!';
+            }, 2500);
+        }
+
+        // Initialize
+        updateUI();
+
+    </script>
+</body>
+</html>

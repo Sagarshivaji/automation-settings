@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Generator - Settings Configuration</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --primary-blue: #2563EB;
+            --primary-orange: #F59E0B;
+            --dark-sidebar: #0F172A;
+            --bg-light: #F8FAFC;
+            --text-main: #1E293B;
+            --text-muted: #64748B;
+            --border-color: #E2E8F0;
+            --success-green: #10B981;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-light); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        /* --- LAYOUT --- */
+        .sidebar { width: 260px; background-color: var(--dark-sidebar); color: #94A3B8; display: flex; flex-direction: column; flex-shrink: 0; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        
+        /* --- SIDEBAR --- */
+        .logo-area { height: 64px; background-color: var(--primary-orange); display: flex; align-items: center; padding: 0 20px; color: white; font-weight: 700; font-size: 18px; }
+        .logo-icon { width: 28px; height: 28px; background-color: var(--dark-sidebar); border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; }
+        .logo-icon::after { content: ''; width: 10px; height: 10px; background-color: white; border-radius: 50%; }
+        
+        .nav-menu { padding: 20px 0; flex: 1; }
+        .nav-item { display: flex; align-items: center; padding: 14px 24px; cursor: pointer; transition: 0.2s; font-size: 14px; font-weight: 500; }
+        .nav-item:hover { background-color: #1E293B; color: white; }
+        .nav-item.active { background-color: var(--primary-blue); color: white; border-left: 4px solid #60A5FA; }
+        .nav-item i { width: 20px; margin-right: 12px; font-size: 16px; }
+
+        /* --- HEADER --- */
+        .header { height: 72px; background: white; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; flex-shrink: 0; }
+        .header h1 { font-size: 24px; font-weight: 700; }
+        .user-profile { display: flex; align-items: center; gap: 16px; }
+        .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: #E2E8F0; overflow: hidden; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- VIEW CONTAINERS --- */
+        .view-container { display: none; flex: 1; overflow-y: auto; }
+        .view-container.active { display: flex; flex-direction: column; }
+
+        /* =========================================
+           VIEW 1: JOB DISCOVERY (WIZARD)
+           ========================================= */
+        .wizard-container { padding: 32px; position: relative; }
+        .progress-line-bg { position: absolute; top: 54px; left: 6%; right: 6%; height: 4px; background: #E2E8F0; z-index: 0; border-radius: 2px; }
+        .progress-line-fill { position: absolute; top: 54px; left: 6%; height: 4px; background: var(--primary-blue); z-index: 1; border-radius: 2px; width: 0%; transition: width 0.8s ease-in-out; }
+        
+        .steps-wrapper { display: flex; justify-content: space-between; position: relative; z-index: 2; }
+        .step-item { display: flex; flex-direction: column; align-items: center; width: 100px; }
+        .step-circle { width: 44px; height: 44px; border-radius: 8px; background: white; border: 2px solid #CBD5E1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: var(--text-muted); transition: 0.4s; }
+        .step-label { margin-top: 12px; font-size: 14px; font-weight: 600; color: var(--text-muted); text-align: center; transition: 0.4s; }
+        
+        .step-item.active .step-circle { background: var(--primary-orange); border-color: var(--primary-orange); color: white; transform: scale(1.1); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); }
+        .step-item.active .step-label { color: var(--text-main); }
+        .step-item.completed .step-circle { background: var(--primary-blue); border-color: var(--primary-blue); color: white; }
+        .step-item.completed .step-label { color: var(--text-main); }
+
+        .content-panel-wrapper { flex: 1; padding: 0 32px 32px 32px; overflow-y: auto; }
+        .content-panel { background: white; border-radius: 12px; border: 1px solid var(--border-color); padding: 24px; min-height: 400px; display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.4s, transform 0.4s; }
+        .content-panel.active { display: block; opacity: 1; transform: translateY(0); }
+        
+        .checkbox-custom { width: 20px; height: 20px; border: 1px solid #CBD5E1; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .checkbox-custom.checked { background: var(--primary-blue); border-color: var(--primary-blue); color: white; }
+        .checkbox-custom i { font-size: 12px; display: none; }
+        .checkbox-custom.checked i { display: block; }
+
+        .footer-actions { height: 80px; background: white; border-top: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 32px; flex-shrink: 0; }
+        .btn { padding: 10px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; transition: 0.2s; border: none; outline: none; }
+        .btn-back { background: white; border: 1px solid var(--border-color); color: var(--text-muted); }
+        .btn-back:hover { background: var(--bg-light); }
+        .btn-next { background: var(--primary-orange); color: white; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); }
+        .btn-next:hover { background: #D97706; }
+        .btn-next i { font-size: 12px; transition: transform 0.3s; }
+        .btn-next:hover i { transform: translateX(4px); }
+
+        .data-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .data-table th { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .data-table td { padding: 16px 0; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        .data-table tr:last-child td { border-bottom: none; }
+
+        .source-grid { display: flex; gap: 16px; margin-top: 24px; }
+        .source-card { flex: 1; border: 2px solid var(--border-color); border-radius: 8px; padding: 16px; display: flex; align-items: center; cursor: pointer; transition: 0.3s; }
+        .source-card.selected { border-color: var(--primary-blue); background: #EFF6FF; }
+        .source-card .checkbox-custom { margin-right: 12px; }
+        .source-card span { font-weight: 600; font-size: 14px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--bg-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; }
+        .stat-value { font-size: 24px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .stat-label { font-size: 13px; font-weight: 600; color: var(--text-main); }
+        .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        
+        .match-badge { background: #DCFCE7; color: #166534; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 8px; }
+        .expandable-row { background: var(--bg-light); border-bottom: 1px solid var(--border-color); display: none; }
+        .expandable-row.open { display: table-row; }
+        .expandable-content { padding: 16px; display: flex; gap: 16px; }
+        .candidate-mini-card { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; flex: 1; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .mini-card-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .mini-card-name { font-weight: 700; font-size: 14px; }
+        .mini-card-role { font-size: 12px; color: var(--text-muted); }
+        .mini-card-score { background: var(--success-green); color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .mini-card-tags { display: flex; gap: 4px; margin-top: 12px; flex-wrap: wrap; }
+        .mini-card-tags span { background: #F1F5F9; color: var(--text-muted); padding: 2px 6px; border-radius: 4px; font-size: 10px; }
+
+        .template-layout { display: flex; gap: 24px; height: 100%; }
+        .template-list { width: 35%; border-right: 1px solid var(--border-color); padding-right: 24px; }
+        .template-search { display: flex; align-items: center; background: #F1F5F9; border-radius: 6px; padding: 8px 12px; margin-bottom: 16px; }
+        .template-search input { border: none; background: transparent; outline: none; font-size: 13px; margin-left: 8px; width: 100%; }
+        .template-item { border: 2px solid var(--border-color); border-radius: 8px; padding: 12px; cursor: pointer; transition: 0.3s; margin-bottom: 12px; }
+        .template-item.selected { border-color: var(--primary-blue); background: #EFF6FF; }
+        .template-item-header { display: flex; align-items: center; margin-bottom: 8px; }
+        .template-item-header .checkbox-custom { margin-right: 8px; width: 16px; height: 16px; }
+        .template-item-title { font-weight: 600; font-size: 13px; }
+        .template-item-desc { font-size: 12px; color: var(--text-muted); margin-left: 24px; }
+        
+        .template-preview { width: 65%; padding: 16px; background: var(--bg-light); border-radius: 8px; border: 1px solid var(--border-color); font-size: 14px; line-height: 1.6; color: var(--text-main); }
+        .preview-profile-box { background: white; border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; margin: 16px 0; }
+        .highlight-var { background: #FEF08A; padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+
+        .review-layout { display: flex; gap: 24px; }
+        .review-summary { width: 35%; display: flex; flex-direction: column; gap: 16px; }
+        .summary-box { background: var(--bg-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; }
+        .summary-header { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .summary-text { font-size: 12px; color: var(--text-muted); }
+        .review-preview { width: 65%; border: 1px solid var(--border-color); border-radius: 8px; background: white; display: flex; flex-direction: column; }
+        .review-preview-header { background: var(--bg-light); border-bottom: 1px solid var(--border-color); padding: 12px; display: flex; gap: 8px; }
+        .review-tab { font-size: 12px; padding: 4px 12px; border-radius: 4px; cursor: pointer; }
+        .review-tab.active { background: var(--primary-blue); color: white; }
+        .review-body { padding: 24px; flex: 1; font-size: 14px; line-height: 1.6; }
+        .review-footer { border-top: 1px solid var(--border-color); padding: 16px; display: flex; justify-content: space-between; align-items: center; background: var(--bg-light); border-radius: 0 0 8px 8px; }
+        .btn-send { background: var(--primary-blue); color: white; position: relative; overflow: hidden; display: flex; align-items: center; gap: 8px; }
+        .btn-send.sent { background: var(--success-green); }
+        .btn-send .spinner { display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
+        .btn-send.loading .spinner { display: block; }
+        .btn-send.loading .btn-text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* =========================================
+           VIEW 2: SETTINGS PAGE
+           ========================================= */
+        .settings-header { padding: 32px 32px 0 32px; }
+        .settings-header h2 { font-size: 28px; margin-bottom: 8px; }
+        .settings-header p { color: var(--text-muted); font-size: 14px; }
+
+        .settings-tabs { display: flex; border-bottom: 1px solid var(--border-color); padding: 0 32px; margin-top: 24px; gap: 32px; }
+        .settings-tab { padding: 16px 0; font-size: 15px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: 0.2s; }
+        .settings-tab.active { color: var(--primary-blue); border-bottom-color: var(--primary-blue); }
+
+        .settings-content { padding: 32px; max-width: 900px; }
+        .settings-panel { display: none; }
+        .settings-panel.active { display: block; animation: fadeIn 0.4s ease-out; }
+
+        /* --- FORM STYLES --- */
+        .form-section { margin-bottom: 40px; }
+        .form-section-title { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .form-section-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+        
+        .input-row { display: flex; gap: 24px; margin-bottom: 20px; align-items: flex-start; }
+        .input-group { flex: 1; position: relative; }
+        .input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-main); }
+        .input-group input[type="number"], 
+        .input-group input[type="text"], 
+        .input-group select { 
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; font-family: inherit; outline: none; transition: 0.2s; background: white;
+        }
+        .input-group input:focus, .input-group select:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .input-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+        /* Native Date & Time Picker Styling */
+        .input-group input[type="date"],
+        .input-group input[type="time"] { 
+            width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; 
+            font-size: 14px; font-family: inherit; outline: none; transition: 0.2s; background: white;
+            cursor: pointer; color: var(--text-main);
+        }
+        .input-group input[type="date"]:focus,
+        .input-group input[type="time"]:focus { border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        
+        .input-group input[type="date"]::-webkit-calendar-picker-indicator,
+        .input-group input[type="time"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.6;
+            transition: 0.2s;
+        }
+        .input-group input[type="date"]::-webkit-calendar-picker-indicator:hover,
+        .input-group input[type="time"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        /* 2-Column Grid for Recurring Schedule */
+        .recurring-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        /* 3-Column Grid for Limitations (New) */
+        .limits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .limits-grid-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        /* Priority List */
+        .priority-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .priority-item { display: flex; align-items: center; justify-content: space-between; background: var(--bg-light); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 6px; }
+        .priority-item-left { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; }
+        .priority-item-left i.fa-grip-vertical { color: #CBD5E1; cursor: grab; }
+        .priority-item-left i.fa-circle { color: var(--primary-blue); font-size: 10px; }
+        .priority-item-remove { color: var(--text-muted); cursor: pointer; font-size: 14px; }
+        .priority-item-remove:hover { color: #EF4444; }
+        .add-priority-btn { font-size: 13px; font-weight: 600; color: var(--primary-blue); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+        /* Checkbox Grid for Job Modes */
+        .checkbox-grid { display: flex; gap: 24px; margin-top: 8px; }
+        .checkbox-grid label { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .checkbox-grid input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--primary-blue); cursor: pointer; }
+
+        /* Duplicate Rules */
+        .duplicate-rule { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border-color); }
+        .duplicate-rule:last-child { border-bottom: none; }
+        .rule-text h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .rule-text p { font-size: 12px; color: var(--text-muted); }
+        .rule-input-group { display: flex; align-items: center; gap: 8px; }
+        .rule-input-group input { width: 70px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 14px; text-align: center; outline: none; }
+        .rule-input-group span { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+        /* Toggle Switch */
+        .toggle-switch { width: 44px; height: 24px; background: #CBD5E1; border-radius: 12px; position: relative; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
+        .toggle-switch.on { background: var(--primary-blue); }
+        .toggle-knob { width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .toggle-switch.on .toggle-knob { transform: translateX(20px); }
+
+        /* Settings Footer */
+        .settings-footer { display: flex; justify-content: flex-end; gap: 16px; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border-color); }
+        .btn-discard { background: white; border: 1px solid var(--border-color); color: var(--text-main); padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-discard:hover { background: var(--bg-light); }
+        .btn-save { background: var(--primary-blue); color: white; padding: 10px 24px; border-radius: 6px; font-weight: 600; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-save:hover { background: #1D4ED8; }
+
+        /* Radio Cards */
+        .radio-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .radio-card { border: 2px solid var(--border-color); border-radius: 8px; padding: 20px; cursor: pointer; transition: 0.2s; position: relative; }
+        .radio-card:hover { border-color: #94A3B8; }
+        .radio-card.selected { border-color: var(--primary-blue); background: #EFF6FF; }
+        .radio-card input[type="radio"] { position: absolute; top: 20px; right: 20px; accent-color: var(--primary-blue); width: 18px; height: 18px; }
+        .radio-card-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+        .radio-card-desc { font-size: 12px; color: var(--text-muted); }
+
+        .schedule-options { background: var(--bg-light); border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; display: none; }
+        .schedule-options.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo-area">
+            <div class="logo-icon"></div>
+            Lead Generator
+        </div>
+        <div class="nav-menu">
+            <div class="nav-item" onclick="switchView('dashboard')"><i class="fa-solid fa-border-all"></i> Dashboard</div>
+            <div class="nav-item" onclick="switchView('candidates')"><i class="fa-solid fa-users"></i> Candidates</div>
+            <div class="nav-item active" id="nav-job-discovery" onclick="switchView('job-discovery')"><i class="fa-solid fa-briefcase"></i> Job Discovery</div>
+            <div class="nav-item"><i class="fa-solid fa-building"></i> Vendors / POCs</div>
+            <div class="nav-item"><i class="fa-solid fa-envelope"></i> Email Templates</div>
+            <div class="nav-item" id="nav-settings" onclick="switchView('settings')"><i class="fa-solid fa-gear"></i> Settings</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        
+        <!-- Header -->
+        <div class="header">
+            <h1 id="page-title">Job Discovery</h1>
+            <div style="display: flex; align-items: center;">
+                <div class="user-profile">
+                    <i class="fa-regular fa-bell" style="color: var(--text-muted); font-size: 18px; cursor: pointer;"></i>
+                    <div class="user-avatar"><img src="https://i.pravatar.cc/100?img=5" alt="User"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =========================================
+             VIEW 1: JOB DISCOVERY WIZARD
+             ========================================= -->
+        <div id="view-job-discovery" class="view-container active">
+            
+            <div style="padding: 16px 32px 0 32px; display: flex; justify-content: flex-end;">
+                <div style="display: flex; align-items: center; background: #F1F5F9; border-radius: 20px; padding: 4px; border: 1px solid var(--border-color);">
+                    <span id="label-manual" class="auto-toggle-label inactive" style="padding: 0 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer;" onclick="toggleAutomation()">Manual</span>
+                    <div id="auto-toggle" class="toggle-switch" onclick="toggleAutomation()" style="width: 44px; height: 24px; background: #CBD5E1; border-radius: 12px; position: relative; cursor: pointer; transition: 0.3s;">
+                        <div class="toggle-knob" style="width: 18px; height: 18px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                    </div>
+                    <span id="label-auto" class="auto-toggle-label active" style="padding: 0 12px; font-size: 13px; font-weight: 600; color: var(--primary-blue); cursor: pointer;" onclick="toggleAutomation()">Auto</span>
+                </div>
+            </div>
+
+            <div class="wizard-container">
+                <div class="progress-line-bg"></div>
+                <div id="progress-fill" class="progress-line-fill"></div>
+                
+                <div class="steps-wrapper">
+                    <div class="step-item active" id="step-indicator-1">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">Candidates</div>
+                    </div>
+                    <div class="step-item" id="step-indicator-2">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">Job Source</div>
+                    </div>
+                    <div class="step-item" id="step-indicator-3">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">Search Jobs</div>
+                    </div>
+                    <div class="step-item" id="step-indicator-4">
+                        <div class="step-circle">4</div>
+                        <div class="step-label">Find POC's</div>
+                    </div>
+                    <div class="step-item" id="step-indicator-5">
+                        <div class="step-circle">5</div>
+                        <div class="step-label">Email Template</div>
+                    </div>
+                    <div class="step-item" id="step-indicator-6">
+                        <div class="step-circle">6</div>
+                        <div class="step-label">Review&Launch</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-panel-wrapper">
+                <!-- STEP 1 -->
+                <div id="panel-1" class="content-panel active">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h2 style="font-size: 18px;">Available Profiles</h2>
+                        <div style="display: flex; align-items: center; font-size: 13px; color: var(--text-muted);">
+                            <div class="checkbox-custom" style="margin-right: 8px;" onclick="toggleCheckbox(this)"><i class="fa-solid fa-check"></i></div> Select All
+                        </div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">Profile</th>
+                                <th style="width: 30%;">Titles OR'D IN ONE OUR SCRAPER CALL</th>
+                                <th style="width: 15%;">Resumes</th>
+                                <th style="width: 15%;">Locations Targeted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <div class="checkbox-custom step1-checkbox" onclick="toggleCheckbox(this)"><i class="fa-solid fa-check"></i></div>
+                                        <span style="margin-left: 12px; font-weight: 500;">Business Analyst</span>
+                                    </div>
+                                </td>
+                                <td>Business Analyst</td>
+                                <td>1</td>
+                                <td>Dallas, TX, Remote</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <div class="checkbox-custom step1-checkbox" onclick="toggleCheckbox(this)"><i class="fa-solid fa-check"></i></div>
+                                        <span style="margin-left: 12px; font-weight: 500;">Lead Site Reliability Engineer</span>
+                                    </div>
+                                </td>
+                                <td>Lead Site Reliability Engineer</td>
+                                <td>1</td>
+                                <td>Vutukuri Frisco, TX, Remote</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- STEP 2 -->
+                <div id="panel-2" class="content-panel">
+                    <h2 style="font-size: 18px; margin-bottom: 4px;">Select Source</h2>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">Pick at least one job repository to query simultaneously.</p>
+                    <div class="source-grid">
+                        <div class="source-card step2-card" onclick="toggleCheckbox(this.querySelector('.checkbox-custom'), this)">
+                            <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                            <span>LinkedIn</span>
+                        </div>
+                        <div class="source-card step2-card" onclick="toggleCheckbox(this.querySelector('.checkbox-custom'), this)">
+                            <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                            <span>LinkedIn</span>
+                        </div>
+                        <div class="source-card step2-card" onclick="toggleCheckbox(this.querySelector('.checkbox-custom'), this)">
+                            <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                            <span>Indeed</span>
+                        </div>
+                        <div class="source-card step2-card" onclick="toggleCheckbox(this.querySelector('.checkbox-custom'), this)">
+                            <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                            <span>Dice</span>
+                        </div>
+                        <div class="source-card step2-card" onclick="toggleCheckbox(this.querySelector('.checkbox-custom'), this)">
+                            <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                            <span>Monster</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3 -->
+                <div id="panel-3" class="content-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="font-size: 18px;">Jobs Found</h2>
+                            <p style="font-size: 13px; color: var(--text-muted);">Overview of the latest search results.</p>
+                        </div>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-value" id="stat-jobs">0</div><div class="stat-label">Jobs Found</div><div class="stat-sub">30 per candidate × 8 candidates</div></div>
+                        <div class="stat-card"><div class="stat-value" id="stat-matches">0</div><div class="stat-label">Total Matches</div><div class="stat-sub">across 177 openings</div></div>
+                        <div class="stat-card"><div class="stat-value" id="stat-candidates">0</div><div class="stat-label">Candidates Searched</div><div class="stat-sub">in this run</div></div>
+                        <div class="stat-card"><div class="stat-value" id="stat-searches">0</div><div class="stat-label">Searches Completed</div><div class="stat-sub">for all candidates</div></div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;"></th>
+                                <th style="width: 30%;">Job Title</th>
+                                <th style="width: 20%;">Company</th>
+                                <th style="width: 15%;">Candidates</th>
+                                <th style="width: 15%;">Matched</th>
+                                <th style="width: 15%;">Job Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="job-row" onclick="toggleJobRow(this)">
+                                <td><div class="checkbox-custom step3-checkbox"><i class="fa-solid fa-check"></i></div></td>
+                                <td><span style="font-weight: 600;">Java Developer</span> <span class="match-badge">High Match</span></td>
+                                <td>Techgene</td>
+                                <td>3</td>
+                                <td style="color: var(--success-green); font-weight: 600;">2</td>
+                                <td><i class="fa-solid fa-link" style="color: var(--primary-blue);"></i> link</td>
+                            </tr>
+                            <tr class="expandable-row" id="expand-row-1">
+                                <td colspan="6">
+                                    <div class="expandable-content">
+                                        <div class="candidate-mini-card">
+                                            <div class="mini-card-header"><div><div class="mini-card-name">Alex Chen</div><div class="mini-card-role">Sr. Java Backend Architect</div></div><div class="mini-card-score">95%</div></div>
+                                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Dallas, TX • 7 Yrs Exp</div>
+                                            <div class="mini-card-tags"><span>Java 17</span><span>Spring Cloud</span><span>Kafka</span><span>AWS</span></div>
+                                        </div>
+                                        <div class="candidate-mini-card">
+                                            <div class="mini-card-header"><div><div class="mini-card-name">Alex Chen</div><div class="mini-card-role">Sr. Java Backend Architect</div></div><div class="mini-card-score">95%</div></div>
+                                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">Dallas, TX • 7 Yrs Exp</div>
+                                            <div class="mini-card-tags"><span>Java 17</span><span>Spring Cloud</span><span>Kafka</span><span>AWS</span></div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="job-row">
+                                <td><div class="checkbox-custom step3-checkbox"><i class="fa-solid fa-check"></i></div></td>
+                                <td><span style="font-weight: 600;">Java Developer</span> <span class="match-badge">High Match</span></td>
+                                <td>Techgene</td>
+                                <td>3</td>
+                                <td style="color: var(--success-green); font-weight: 600;">2</td>
+                                <td><i class="fa-solid fa-link" style="color: var(--primary-blue);"></i> link</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- STEP 4 -->
+                <div id="panel-4" class="content-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <div>
+                            <h2 style="font-size: 18px;">POCs</h2>
+                            <p style="font-size: 13px; color: var(--text-muted);">Pick at least one job repository to query simultaneously.</p>
+                        </div>
+                        <div style="display: flex; align-items: center; font-size: 13px; color: var(--primary-blue); font-weight: 600; background: #EFF6FF; padding: 6px 12px; border-radius: 6px; border: 1px solid #BFDBFE;">
+                            <div class="checkbox-custom" style="margin-right: 8px; border-color: var(--primary-blue);" onclick="toggleCheckbox(this)"><i class="fa-solid fa-check"></i></div> Select All
+                        </div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;"></th>
+                                <th style="width: 25%;">Name</th>
+                                <th style="width: 30%;">Email</th>
+                                <th style="width: 20%;">Company</th>
+                                <th style="width: 20%;">Role</th>
+                            </tr>
+                        </thead>
+                        <tbody id="poc-table-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- STEP 5 -->
+                <div id="panel-5" class="content-panel">
+                    <div class="template-layout">
+                        <div class="template-list">
+                            <div class="template-search">
+                                <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted);"></i>
+                                <input type="text" placeholder="Search templates...">
+                            </div>
+                            <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; display: flex; justify-content: space-between;">
+                                <span>Templates</span>
+                                <span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px;">4 Active</span>
+                            </div>
+                            <div class="template-item step5-template" onclick="selectTemplate(this)">
+                                <div class="template-item-header">
+                                    <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                                    <div class="template-item-title">Candidate Introduction Pitch</div>
+                                </div>
+                                <div class="template-item-desc">Formatted for HR Rahul with candidate match highlights, skills breakdown & resume links.</div>
+                            </div>
+                            <div class="template-item">
+                                <div class="template-item-header">
+                                    <div class="checkbox-custom"><i class="fa-solid fa-check"></i></div>
+                                    <div class="template-item-title">Offer Discussion & Compensation</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="template-preview" id="template-preview-box">
+                            <div style="color: var(--text-muted); text-align: center; margin-top: 100px;">Select a template to preview</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 6 -->
+                <div id="panel-6" class="content-panel">
+                    <div class="review-layout">
+                        <div class="review-summary">
+                            <div class="summary-box"><div class="summary-header"><span>Candidates</span> <span style="color: var(--primary-blue);">5 Total</span></div><div class="summary-text">Rahul M. - Java Developer (8+ Yrs)</div></div>
+                            <div class="summary-box"><div class="summary-header"><span>POCs</span> <span style="color: var(--success-green);">● 45 Contacts</span></div><div class="summary-text">Tier-1 Vendors & Clients</div></div>
+                            <div class="summary-box"><div class="summary-header"><span>Email Template</span> <span style="color: var(--primary-blue); font-size: 12px;">Configure</span></div><div class="summary-text">Standard Bench Candidate Intro v2</div></div>
+                            <div class="summary-box"><div class="summary-header"><span>Timing</span> <span style="color: var(--text-muted); font-size: 12px;">Send immediately</span></div><div class="summary-text">EST Optimized</div></div>
+                        </div>
+                        <div class="review-preview">
+                            <div class="review-preview-header">
+                                <div class="review-tab active">Preview</div>
+                                <div class="review-tab">Code / Raw</div>
+                            </div>
+                            <div class="review-body">
+                                <div style="margin-bottom: 16px;"><span style="color: var(--text-muted); display: inline-block; width: 60px;">To:</span><span class="highlight-var">{{POC_First_Name}}</span> &lt;<span class="highlight-var">{{POC_Email}}</span>&gt; (45 Selected Contacts)</div>
+                                <div style="margin-bottom: 24px;"><span style="color: var(--text-muted); display: inline-block; width: 60px;">Subject:</span><span style="font-weight: 600;">Top Immediate Available Bench Profile: Java Full-Stack Specialist (Rahul M. & Team)</span></div>
+                                <p>Hi <span class="highlight-var">{{POC_First_Name}}</span>,</p><br>
+                                <p>Hope you are having a productive week. I am reaching out from Techgene Solutions bench sales team regarding available senior technical consultants ready for immediate contract deployments.</p><br>
+                                <p>Based on your recent open requirements for Senior Engineering roles, here is our top spotlight consultant available immediately for client interviews:</p>
+                                <div class="preview-profile-box">
+                                    <div style="font-weight: 700; font-size: 16px;">Rahul M. <span style="background: #DCFCE7; color: #166534; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 8px;">Immediate Availability</span></div>
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Role: Senior Java / Spring Boot Microservices Developer</div>
+                                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Core Stack: Java 17, Spring Cloud, Kafka, AWS, Docker</div>
+                                </div>
+                                <p>Please let me know if any of these profiles align with your client's needs. We can arrange an internal screening call or submit right away.</p><br>
+                                <p>Best regards,<br><strong>Alex Rivera</strong><br>Lead Bench Sales Manager</p>
+                            </div>
+                            <div class="review-footer">
+                                <button class="btn btn-back" onclick="prevStep()">Back</button>
+                                <div style="display: flex; gap: 12px;">
+                                    <button class="btn" style="background: white; border: 1px solid var(--border-color); color: var(--text-main);"><i class="fa-regular fa-envelope" style="margin-right: 8px;"></i> Send Test Email</button>
+                                    <button id="btn-launch" class="btn btn-send" onclick="simulateSend()">
+                                        <div class="spinner"></div>
+                                        <span class="btn-text"><i class="fa-solid fa-paper-plane" style="margin-right: 8px;"></i> Schedule / Send Outreach (45 Contacts)</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-actions">
+                <button class="btn btn-back" id="btn-back" onclick="prevStep()">Back</button>
+                <button class="btn btn-next" id="btn-next" onclick="nextStep()">Next <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+        </div>
+
+        <!-- =========================================
+             VIEW 2: SETTINGS PAGE
+             ========================================= -->
+        <div id="view-settings" class="view-container">
+            <div class="settings-header">
+                <h2>Configuration</h2>
+                <p>Manage how the AI agent operates your lead generation pipeline.</p>
+            </div>
+            
+            <div class="settings-tabs">
+                <div class="settings-tab active" onclick="switchSettingsTab('manual')">Manual Mode</div>
+                <div class="settings-tab" onclick="switchSettingsTab('automation')">Automation Mode</div>
+            </div>
+
+            <div class="settings-content">
+                
+                <!-- =========================================
+                     MANUAL SETTINGS PANEL
+                     ========================================= -->
+                <div id="settings-panel-manual" class="settings-panel active">
+                    
+                    <!-- Search Limits -->
+                    <div class="form-section">
+                        <div class="form-section-title">Search Limits</div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Max Jobs To Fetch</label>
+                                <input type="number" value="320" placeholder="e.g. 320">
+                                <div class="input-hint">Defines the number of keyword and semantic matching</div>
+                            </div>
+                            <div class="input-group">
+                                <label>Max Jobs Per Role</label>
+                                <input type="number" value="320" placeholder="e.g. 320">
+                                <div class="input-hint">Defines the number of keyword and semantic matching</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- POC -->
+                    <div class="form-section">
+                        <div class="form-section-title">POC</div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>POCs Per Company</label>
+                                <input type="number" value="3">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Priority & Ordering -->
+                    <div class="form-section">
+                        <div class="form-section-title">Contact Priority & Ordering</div>
+                        <div class="form-section-desc">Define who to target first and how deep to search within an organization.</div>
+                        
+                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-main);">Priority Order</div>
+                        <div class="priority-list">
+                            <div class="priority-item">
+                                <div class="priority-item-left">
+                                    <i class="fa-solid fa-grip-vertical"></i>
+                                    <i class="fa-solid fa-circle"></i>
+                                    <span>Hiring Manager</span>
+                                </div>
+                                <i class="fa-solid fa-xmark priority-item-remove" onclick="this.closest('.priority-item').remove()"></i>
+                            </div>
+                            <div class="priority-item">
+                                <div class="priority-item-left">
+                                    <i class="fa-solid fa-grip-vertical"></i>
+                                    <i class="fa-solid fa-circle"></i>
+                                    <span>Department Head (VP/Dir)</span>
+                                </div>
+                                <i class="fa-solid fa-xmark priority-item-remove" onclick="this.closest('.priority-item').remove()"></i>
+                            </div>
+                            <div class="priority-item">
+                                <div class="priority-item-left">
+                                    <i class="fa-solid fa-grip-vertical"></i>
+                                    <i class="fa-solid fa-circle"></i>
+                                    <span>HR / Talent Acquisition</span>
+                                </div>
+                                <i class="fa-solid fa-xmark priority-item-remove" onclick="this.closest('.priority-item').remove()"></i>
+                            </div>
+                        </div>
+                        <div class="add-priority-btn"><i class="fa-solid fa-plus"></i> Add Role Priority</div>
+                    </div>
+
+                    <!-- Search Behavior -->
+                    <div class="form-section">
+                        <div class="form-section-title">Search Behavior</div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Job Modes</label>
+                                <div class="checkbox-grid">
+                                    <label><input type="checkbox" checked> Remote</label>
+                                    <label><input type="checkbox"> Hybrid</label>
+                                    <label><input type="checkbox"> Onsite</label>
+                                </div>
+                                <div class="input-hint">Defines the number of keyword and semantic matching</div>
+                            </div>
+                            <div class="input-group">
+                                <label>Posted Within</label>
+                                <select>
+                                    <option>Last 30 Days</option>
+                                    <option>Last 7 Days</option>
+                                    <option>Last 24 Hours</option>
+                                </select>
+                                <div class="input-hint">Defines the number of keyword and semantic matching</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Duplicate Rules -->
+                    <div class="form-section">
+                        <div class="form-section-title">Duplicate Rules</div>
+                        
+                        <div class="duplicate-rule">
+                            <div class="rule-text">
+                                <h4>Skip Duplicate Jobs/Companies</h4>
+                                <p>Automatically filter out listings that appear multiple times or from already evaluated companies in the current run</p>
+                            </div>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')">
+                                <div class="toggle-knob"></div>
+                            </div>
+                        </div>
+
+                        <div class="duplicate-rule">
+                            <div class="rule-text">
+                                <h4>Skip Already Applied</h4>
+                                <p>Exclude jobs applied to within this timeframe</p>
+                            </div>
+                            <div class="rule-input-group">
+                                <input type="number" value="90">
+                                <span>Days</span>
+                            </div>
+                        </div>
+
+                        <div class="duplicate-rule">
+                            <div class="rule-text">
+                                <h4>Skip Previously Contacted</h4>
+                                <p>Exclude companies contacted within this timeframe</p>
+                            </div>
+                            <div class="rule-input-group">
+                                <input type="number" value="60">
+                                <span>Days</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Date & Time Selection -->
+                    <div class="form-section">
+                        <div class="form-section-title">Manual Execution Schedule</div>
+                        <div class="form-section-desc">Optionally select a target date and time to manually run this configuration.</div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Select Date</label>
+                                <input type="date" value="2026-10-07">
+                            </div>
+                            <div class="input-group">
+                                <label>Select Time</label>
+                                <input type="time" value="09:00">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-footer">
+                        <button class="btn-discard">Discard Changes</button>
+                        <button class="btn-save" onclick="alert('Manual settings saved successfully!')">Save Configuration</button>
+                    </div>
+                </div>
+
+                <!-- =========================================
+                     AUTOMATION SETTINGS PANEL
+                     ========================================= -->
+                <div id="settings-panel-automation" class="settings-panel">
+                    
+                    <div class="form-section">
+                        <div class="form-section-title">Execution Frequency</div>
+                        <div class="form-section-desc">Define when the AI agent should run the Job Discovery pipeline.</div>
+                        
+                        <div class="radio-cards">
+                            <label class="radio-card" onclick="selectFrequency(this, 'time')">
+                                <input type="radio" name="frequency">
+                                <div class="radio-card-title">At a Specific Time</div>
+                                <div class="radio-card-desc">Run once at a designated time.</div>
+                            </label>
+                            <label class="radio-card selected" onclick="selectFrequency(this, 'recurring')">
+                                <input type="radio" name="frequency" checked>
+                                <div class="radio-card-title">Recurring Schedule</div>
+                                <div class="radio-card-desc">Run repeatedly based on an interval.</div>
+                            </label>
+                        </div>
+
+                        <!-- Specific Time Options -->
+                        <div id="schedule-time" class="schedule-options">
+                            <div class="input-row">
+                                <div class="input-group">
+                                    <label>Select Date</label>
+                                    <input type="date" value="2026-10-07">
+                                </div>
+                                <div class="input-group">
+                                    <label>Select Time</label>
+                                    <input type="time" value="09:00">
+                                </div>
+                                <div class="input-group">
+                                    <label>Time Zone</label>
+                                    <select>
+                                        <option>EST (UTC-5) - New York</option>
+                                        <option>PST (UTC-8) - Los Angeles</option>
+                                        <option>UTC (UTC+0) - London</option>
+                                        <option>IST (UTC+5:30) - India</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recurring Options with 2-Column Grid Layout -->
+                        <div id="schedule-recurring" class="schedule-options active">
+                            <div class="recurring-grid">
+                                <!-- Column 1 -->
+                                <div class="input-group">
+                                    <label>Repeat Every</label>
+                                    <select>
+                                        <option>Day</option>
+                                        <option>Week</option>
+                                        <option>Month</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Start Date</label>
+                                    <input type="date" value="2026-10-07">
+                                </div>
+                                
+                                <!-- Column 2 -->
+                                <div class="input-group">
+                                    <label>Starting At</label>
+                                    <input type="time" value="09:00">
+                                </div>
+                                <div class="input-group">
+                                    <label>Ends</label>
+                                    <select id="ends-select" onchange="handleEndsChange()">
+                                        <option value="never">Never</option>
+                                        <option value="occurrences">After N Occurrences</option>
+                                        <option value="date">On Date</option>
+                                    </select>
+                                </div>
+
+                                <!-- Dynamic Inputs for Ends (Grouped in same column) -->
+                                <div class="input-group" id="ends-occurrences-row" style="display: none;">
+                                    <label>Number of Occurrences</label>
+                                    <input type="number" value="10" min="1" placeholder="e.g. 10">
+                                </div>
+                                <div class="input-group" id="ends-date-row" style="display: none;">
+                                    <label>End Date</label>
+                                    <input type="date" value="2026-12-31">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Limitations & Guardrails (Now using 3-Column Grid) -->
+                    <div class="form-section">
+                        <div class="form-section-title">Limitations & Guardrails</div>
+                        <div class="form-section-desc">Set boundaries for the AI agent to prevent over-processing or spam.</div>
+                        
+                        <div class="limits-grid">
+                            <div class="input-group">
+                                <label>Max Jobs To Fetch</label>
+                                <input type="number" value="320" min="1" max="500">
+                                <div class="input-hint">Total jobs to scan per run</div>
+                            </div>
+                            <div class="input-group">
+                                <label>Max Jobs Per Role</label>
+                                <input type="number" value="50" min="1" max="100">
+                                <div class="input-hint">Limit per candidate role</div>
+                            </div>
+                            <div class="input-group">
+                                <label>POCs Per Company</label>
+                                <input type="number" value="3" min="1" max="20">
+                                <div class="input-hint">Max contacts to extract</div>
+                            </div>
+                        </div>
+                        <div class="limits-grid-2col">
+                            <div class="input-group">
+                                <label>Max Emails per Run</label>
+                                <input type="number" value="100" min="1" max="1000">
+                                <div class="input-hint">Prevent sending too many emails</div>
+                            </div>
+                            <div class="input-group">
+                                <label>Skip Previously Contacted (Days)</label>
+                                <input type="number" value="60" min="1" max="365">
+                                <div class="input-hint">Cooldown period before contacting again</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search Behavior -->
+                    <div class="form-section">
+                        <div class="form-section-title">Search Behavior</div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Job Modes</label>
+                                <div class="checkbox-grid">
+                                    <label><input type="checkbox" checked> Remote</label>
+                                    <label><input type="checkbox"> Hybrid</label>
+                                    <label><input type="checkbox"> Onsite</label>
+                                </div>
+                                <div class="input-hint">Defines the number of keyword and semantic matching</div>
+                            </div>
+                            <div class="input-group">
+                                <label>Posted Within</label>
+                                <select>
+                                    <option>Last 30 Days</option>
+                                    <option>Last 7 Days</option>
+                                    <option>Last 24 Hours</option>
+                                </select>
+                                <div class="input-hint">Defines the number of keyword and semantic matching</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Duplicate Rules -->
+                    <div class="form-section">
+                        <div class="form-section-title">Duplicate Rules</div>
+                        
+                        <div class="duplicate-rule">
+                            <div class="rule-text">
+                                <h4>Skip Duplicate Jobs/Companies</h4>
+                                <p>Automatically filter out listings that appear multiple times or from already evaluated companies in the current run</p>
+                            </div>
+                            <div class="toggle-switch on" onclick="this.classList.toggle('on')">
+                                <div class="toggle-knob"></div>
+                            </div>
+                        </div>
+
+                        <div class="duplicate-rule">
+                            <div class="rule-text">
+                                <h4>Skip Already Applied</h4>
+                                <p>Exclude jobs applied to within this timeframe</p>
+                            </div>
+                            <div class="rule-input-group">
+                                <input type="number" value="90">
+                                <span>Days</span>
+                            </div>
+                        </div>
+
+                        <div class="duplicate-rule">
+                            <div class="rule-text">
+                                <h4>Skip Previously Contacted</h4>
+                                <p>Exclude companies contacted within this timeframe</p>
+                            </div>
+                            <div class="rule-input-group">
+                                <input type="number" value="60">
+                                <span>Days</span>
+                            </div>
+                        </div>
+                    </div>
+
+                   
+
+                    <div class="settings-footer">
+                        <button class="btn-discard">Discard Changes</button>
+                        <button class="btn-save" onclick="alert('Automation settings saved successfully!')">Save Configuration</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- GLOBAL STATE ---
+        let currentView = 'job-discovery';
+        let currentStep = 1;
+        const totalSteps = 6;
+        let isAuto = false;
+        let autoTimer = null;
+
+        // Populate POC table for Step 4
+        const pocTableBody = document.getElementById('poc-table-body');
+        for(let i=0; i<8; i++) {
+            pocTableBody.innerHTML += `
+                <tr>
+                    <td><div class="checkbox-custom step4-checkbox" onclick="toggleCheckbox(this)"><i class="fa-solid fa-check"></i></div></td>
+                    <td style="font-weight: 500;">rahul</td>
+                    <td>Rahul@gmail.com</td>
+                    <td>Techgene</td>
+                    <td>Manager</td>
+                </tr>
+            `;
+        }
+
+        // --- VIEW ROUTING ---
+        function switchView(viewName) {
+            currentView = viewName;
+            
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            if (viewName === 'job-discovery') document.getElementById('nav-job-discovery').classList.add('active');
+            if (viewName === 'settings') document.getElementById('nav-settings').classList.add('active');
+
+            document.querySelectorAll('.view-container').forEach(view => view.classList.remove('active'));
+            document.getElementById(`view-${viewName}`).classList.add('active');
+
+            const titleMap = {
+                'job-discovery': 'Job Discovery',
+                'settings': 'Settings'
+            };
+            document.getElementById('page-title').innerText = titleMap[viewName] || 'Dashboard';
+            
+            if (viewName !== 'job-discovery' && isAuto) {
+                toggleAutomation();
+            }
+        }
+
+        // --- SETTINGS TABS LOGIC ---
+        function switchSettingsTab(tabName) {
+            document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.closest('.settings-tab').classList.add('active');
+
+            document.querySelectorAll('.settings-panel').forEach(panel => panel.classList.remove('active'));
+            document.getElementById(`settings-panel-${tabName}`).classList.add('active');
+        }
+
+        function selectFrequency(cardElement, type) {
+            document.querySelectorAll('.radio-card').forEach(card => card.classList.remove('selected'));
+            cardElement.classList.add('selected');
+            
+            document.querySelectorAll('.schedule-options').forEach(opt => opt.classList.remove('active'));
+            if (type === 'time') {
+                document.getElementById('schedule-time').classList.add('active');
+            } else {
+                document.getElementById('schedule-recurring').classList.add('active');
+            }
+        }
+
+        // --- DYNAMIC ENDS HANDLER ---
+        function handleEndsChange() {
+            const val = document.getElementById('ends-select').value;
+            document.getElementById('ends-occurrences-row').style.display = 'none';
+            document.getElementById('ends-date-row').style.display = 'none';
+
+            if (val === 'occurrences') {
+                document.getElementById('ends-occurrences-row').style.display = 'block';
+            } else if (val === 'date') {
+                document.getElementById('ends-date-row').style.display = 'block';
+            }
+        }
+
+        // --- WIZARD NAVIGATION & AUTOMATION ---
+        function updateUI() {
+            const progressPercent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            document.getElementById('progress-fill').style.width = progressPercent + '%';
+
+            for (let i = 1; i <= totalSteps; i++) {
+                const indicator = document.getElementById(`step-indicator-${i}`);
+                indicator.className = 'step-item';
+                if (i < currentStep) indicator.classList.add('completed');
+                if (i === currentStep) indicator.classList.add('active');
+            }
+
+            document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active'));
+            const activePanel = document.getElementById(`panel-${currentStep}`);
+            activePanel.classList.add('active');
+            activePanel.classList.remove('fade-in');
+            void activePanel.offsetWidth; 
+            activePanel.classList.add('fade-in');
+
+            document.getElementById('btn-back').disabled = currentStep === 1;
+            const btnNext = document.getElementById('btn-next');
+            if (currentStep === totalSteps) {
+                btnNext.innerHTML = 'Launch Campaign <i class="fa-solid fa-arrow-right"></i>';
+            } else {
+                btnNext.innerHTML = 'Next <i class="fa-solid fa-arrow-right"></i>';
+            }
+
+            if (isAuto) {
+                runStepAutomation(currentStep);
+            }
+        }
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateUI();
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateUI();
+            }
+        }
+
+        function toggleCheckbox(el, parentCard = null) {
+            el.classList.toggle('checked');
+            if (parentCard) {
+                parentCard.classList.toggle('selected');
+            }
+        }
+
+        function toggleJobRow(row) {
+            const checkbox = row.querySelector('.checkbox-custom');
+            checkbox.classList.toggle('checked');
+            const expandRow = document.getElementById('expand-row-1');
+            if (expandRow) expandRow.classList.toggle('open');
+        }
+
+        function selectTemplate(el) {
+            document.querySelectorAll('.template-item').forEach(item => item.classList.remove('selected'));
+            el.classList.add('selected');
+            el.querySelector('.checkbox-custom').classList.add('checked');
+            
+            document.getElementById('template-preview-box').innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 16px;">Preview <span style="font-size: 12px; background: #E2E8F0; padding: 4px 8px; border-radius: 4px; margin-left: 8px; color: var(--text-muted);">Template: Candidate Introduction Pitch</span></div>
+                <div style="background: white; padding: 16px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <p>Hi Rahul,</p><br>
+                    <p>Hope this week is treating you well! Following up on Techgene's open requisition for the <strong>Java Backend Engineer</strong> position...</p>
+                    <div style="background: var(--bg-light); padding: 12px; border-radius: 6px; margin: 12px 0;">
+                        <p><strong>Candidate Spotlight</strong><br>Rahul M. — 8+ yrs Java / Spring Boot<br>Immediate Availability</p>
+                    </div>
+                    <p>Let me know if you'd like to schedule a quick screening call.</p>
+                </div>
+            `;
+        }
+
+        // --- SIMULATE SEND (STEP 6 BUTTON) ---
+        function simulateSend() {
+            const btn = document.getElementById('btn-launch');
+            if (!btn) return;
+            btn.classList.add('loading');
+            setTimeout(() => {
+                btn.classList.remove('loading');
+                btn.classList.add('sent');
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Outreach Sent!';
+                btn.disabled = true;
+                setTimeout(() => {
+                    btn.classList.remove('sent');
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane" style="margin-right: 8px;"></i> Schedule / Send Outreach (45 Contacts)';
+                    btn.disabled = false;
+                }, 2000);
+            }, 1500);
+        }
+
+        // --- AUTOMATION TOGGLE + HELPER (simplified) ---
+        function toggleAutomation() {
+            isAuto = !isAuto;
+            const toggle = document.getElementById('auto-toggle');
+            const labelManual = document.getElementById('label-manual');
+            const labelAuto = document.getElementById('label-auto');
+
+            if (isAuto) {
+                toggle.classList.add('on');
+                labelManual.style.color = 'var(--text-muted)';
+                labelAuto.style.color = 'var(--primary-blue)';
+                if (currentView === 'job-discovery') runStepAutomation(currentStep);
+            } else {
+                toggle.classList.remove('on');
+                labelManual.style.color = 'var(--primary-blue)';
+                labelAuto.style.color = 'var(--text-muted)';
+                if (autoTimer) clearTimeout(autoTimer);
+            }
+        }
+
+        function runStepAutomation(step) {
+            if (autoTimer) clearTimeout(autoTimer);
+            autoTimer = setTimeout(() => {
+                if (isAuto && currentView === 'job-discovery' && currentStep < totalSteps) {
+                    nextStep();
+                } else if (isAuto && currentStep === totalSteps) {
+                    simulateSend();
+                }
+            }, 1500);
+        }
+
+        // --- INITIAL SETUP: ensures step 1 active and progress line correct ---
+        window.onload = function() {
+            // Set default active view
+            switchView('job-discovery');
+            updateUI();
+            
+            // Toggle helper for all generic toggle switches (onclick just toggles class)
+            // Already handled inline. 
+
+            // Pre-select first template? Not necessary. 
+
+            // Step2 initial: none selected — good. 
+            // Step6 send button ready.
+
+            // ensure the POC table checkboxes work (already added step4-checkbox class)
+
+            // For step3 job row expand: only first row has expand. Second row no expand. 
+            // Keep as is.
+
+            // Add a handler for "Select All" in step1 and step4? They toggle but we keep it simple.
+
+            // ensure any toggle switch inside duplicate rules works (already inline).
+
+            // ensure the "ends" selector shows/hides rows
+            // handleEndsChange already bound.
+        };
+
+        // Ensure switchSettingsTab uses event (global)
+        window.switchSettingsTab = function(tabName) {
+            document.querySelectorAll('.settings-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.closest('.settings-tab').classList.add('active');
+
+            document.querySelectorAll('.settings-panel').forEach(panel => panel.classList.remove('active'));
+            document.getElementById(`settings-panel-${tabName}`).classList.add('active');
+        };
+
+        // Expose other needed functions globally
+        window.switchView = switchView;
+        window.switchSettingsTab = switchSettingsTab;
+        window.selectFrequency = selectFrequency;
+        window.handleEndsChange = handleEndsChange;
+        window.nextStep = nextStep;
+        window.prevStep = prevStep;
+        window.toggleCheckbox = toggleCheckbox;
+        window.toggleJobRow = toggleJobRow;
+        window.selectTemplate = selectTemplate;
+        window.simulateSend = simulateSend;
+        window.toggleAutomation = toggleAutomation;
+        window.runStepAutomation = runStepAutomation;
+        // 'event' is global in inline handlers, that's fine.
+
+        // For safety, update UI when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            updateUI();
+        });
+    </script>
+</body>
+</html>
